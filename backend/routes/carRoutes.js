@@ -4,13 +4,13 @@ const Car = require('../models/Car');
 
 // POST route to add a car
 //router.post('/cars', async (req, res) => {
-  try {
-    const car = new Car(req.body);
-    const savedCar = await car.save();
-    res.status(201).json(savedCar);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+  //try {
+    //const car = new Car(req.body);
+    //const savedCar = await car.save();
+    //res.status(201).json(savedCar);
+  //} catch (error) {
+    //res.status(400).json({ message: error.message });
+  //}
 //});
 
 router.get('/cars/search', async (req, res) => {
