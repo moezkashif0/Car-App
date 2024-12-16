@@ -1,31 +1,54 @@
 const Car = require('../models/Car');
 
+exports.addCar = async (req, res) => {
+  try {
+    const car = new Car(req.body);
+    const savedCar = await car.save();
+    res.status(201).json(savedCar);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 exports.searchCars = async (req, res) => {
   try {
-    const { query, page = 1, limit = 10 } = req.query;
+    const { 
+      make, model, year, minPrice, maxPrice, 
+      color, fuelType, transmission,
+      page = 1, limit = 10 
+    } = req.query;
     
-    const searchQuery = query
-      ? {
-          $or: [
-            { make: { $regex: query, $options: 'i' } },
-            { model: { $regex: query, $options: 'i' } }
-          ]
-        }
-      : {};
+    let query = {};
+    
+    if (make) query.make = new RegExp(make, 'i');
+    if (model) query.model = new RegExp(model, 'i');
+    if (color) query.color = new RegExp(color, 'i');
+    if (fuelType) query.fuelType = new RegExp(fuelType, 'i');
+    if (transmission) query.transmission = new RegExp(transmission, 'i');
+    if (year) query.year = parseInt(year);
+    
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseInt(minPrice);
+      if (maxPrice) query.price.$lte = parseInt(maxPrice);
+    }
 
-    const cars = await Car.find(searchQuery)
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
-
-    const count = await Car.countDocuments(searchQuery);
+    const startIndex = (parseInt(page) - 1) * parseInt(limit);
+    const totalDocs = await Car.countDocuments(query);
+    const results = await Car.find(query)
+      .skip(startIndex)
+      .limit(parseInt(limit));
 
     res.json({
-      cars,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page
+      cars: results,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalDocs / parseInt(limit)),
+        totalItems: totalDocs,
+        itemsPerPage: parseInt(limit)
+      }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error searching cars', error });
+    res.status(500).json({ message: error.message });
   }
 };
